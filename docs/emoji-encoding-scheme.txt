@@ -1,0 +1,164 @@
+# ------------------------------------------------------------------------------
+# Author: Paul Frisby
+# Email: mail@paulfrisby.com
+# Github: https://github.com/paulfrisby/
+# ------------------------------------------------------------------------------
+                    🎮 🕹️ 🎰 🎲 🧩 🧸 ♠️ ♥️ ♦️ ♣️ ♟️ 🃏 🀄
+# ------------------------------------------------------------------------------
+
+This document broadly describes the structure of the custom emoji encoding of a 
+chess position implemented in the covert chess program.
+
+The structure will broadly reflect the structure of a FEN position to allow for 
+simple conversion between the two encoding schemes.
+https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation 
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Explanantion
+# ------------------------------------------------------------------------------
+There are 3,178 emojis in the 12.1 unicode standard.
+
+Each square on a chess board has 13 possible states, no piece, 6 white pieces
+(pawn, knight, bishop, rook, queen, & king), & 6 black pieces (pawn, knight, 
+bishop, rook, queen, & king).
+		
+Thus for each n squares, there are 13^n possible combinations
+13^3 = 2,197
+13^4 = 28,561
+
+Since 
+2,197 < number of emoji (3,187) < 28,561 
+We can comfortably encode 3 squares per emoji (but not 4). Each successive emoji
+will start with an offset of 1,111 to the index, so that repeat sequences do not 
+result in repeat emojis. (e.g. standard starting position will have 10 emoji in 
+a row representing 3 empty squares)
+
+1 emoji only needs to encode 1 square (64 squares - (21 emoji * 3 squares) = 1)
+Thus it only needs to cover 13 possibilities. This emoji will also be used to 
+determine which encoding scheme is being used, which gives option to add 
+different encodings later and remain backwards compatibile. The 1st emoji will 
+be used for this pupose (and it will also encode the status of the A8 square)
+3,178 - 13 = 3,165 emojis reserved for future encoding schemes. This emoji will 
+be index 2441-2453 (🎮🕹️🎰🎲🧩🧸♠️♥️♦️♣️♟️🃏🀄) depending on piece. Therefore, this
+encoding scheme is defined and identified by these 13 emojis in the initial
+position.
+
+A further emoji will be used to show which colour to move next, which 
+castles are still possible, & which square a pawn can be en passant captured on
+this move, if any. (2 * 2^4 * (64 + 1) = 2080 combinations)
+
+Up to 100 half moves can be made without capture / pawn advancement before a 
+draw is made. Therefore there are 101 possibilities (0-100) for halfmove clock
+encoded in position.
+
+http://www.wismuth.com/chess/longest-game.html
+The above link explains how the maximum length of a chess game with the 50-move
+rule is 5898.5 moves. Therefore there are 5,898 possibilities (1-5,898) for 
+total moves encoded in position.
+
+Since 
+3,178 possibilities for emoji 1 * 3,178 possibilities for emoji 2 = 10,099,684
+is greater than 
+101 halfmove clock possiblities * 5,898 fullmove possiblities = 595,698
+
+2 emojis can be used to encode both of these together. They need to be encoded 
+together, otherwise 1 emoji would not be enough to cover the 5,898 fullmove 
+possiblities.
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# General Structure
+# ------------------------------------------------------------------------------
+Each position encoded with emoji will be 25 emoji long 
+[emoji 1] = encoding system used + square A8 status
+[emoji 2-22] = encoding status 3 squares each, from left to right, top to bottom
+[emoji 23] = who to move, castling rights, en passant possibility / square
+[emoji 24/25] = half moves since last capture or pawn advancement / full moves
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Emoji formula (each index value is modulo 3178, so as to never overflow)
+# ------------------------------------------------------------------------------
+emoji 01 index = 2441 + A8 piece value
+emoji 02 index = square1*13^2 + square2*13 + square3 + (0*offset) 
+emoji 03 index = square1*13^2 + square2*13 + square3 + (1*offset) 
+emoji 04 index = square1*13^2 + square2*13 + square3 + (2*offset) 
+emoji 05 index = square1*13^2 + square2*13 + square3 + (3*offset) 
+emoji 06 index = square1*13^2 + square2*13 + square3 + (4*offset) 
+emoji 07 index = square1*13^2 + square2*13 + square3 + (5*offset) 
+emoji 08 index = square1*13^2 + square2*13 + square3 + (6*offset) 
+emoji 09 index = square1*13^2 + square2*13 + square3 + (7*offset) 
+emoji 10 index = square1*13^2 + square2*13 + square3 + (8*offset) 
+emoji 11 index = square1*13^2 + square2*13 + square3 + (9*offset) 
+emoji 12 index = square1*13^2 + square2*13 + square3 + (10*offset) 
+emoji 13 index = square1*13^2 + square2*13 + square3 + (11*offset) 
+emoji 14 index = square1*13^2 + square2*13 + square3 + (12*offset) 
+emoji 15 index = square1*13^2 + square2*13 + square3 + (13*offset) 
+emoji 16 index = square1*13^2 + square2*13 + square3 + (14*offset) 
+emoji 17 index = square1*13^2 + square2*13 + square3 + (15*offset) 
+emoji 18 index = square1*13^2 + square2*13 + square3 + (16*offset) 
+emoji 19 index = square1*13^2 + square2*13 + square3 + (17*offset) 
+emoji 20 index = square1*13^2 + square2*13 + square3 + (18*offset) 
+emoji 21 index = square1*13^2 + square2*13 + square3 + (19*offset) 
+emoji 22 index = square1*13^2 + square2*13 + square3 + (20*offset) 
+emoji 23 index = 
+(next to move*1040) + (white kingside castle*520) + (white queenside castle*260)
++ (black kingside castle*130) + (black queenside castle*65) + enpassant value
+emoji 24 index = ( halfmove + (fullmove*101) ) / 3178
+emoji 25 index = ( halfmove + (fullmove*101) ) % 3178
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Values used in conversion formula
+# ------------------------------------------------------------------------------
+offset = 1,111
+
+Value of a given square:
+	no piece:
+		0 - empty square
+	white piece:
+		1 - pawn
+		2 - knight
+		3 - bishop
+		4 - rook
+		5 - queen
+		6 - king
+	black piece:
+		7 - pawn
+		8 - knight
+		9 - bishop	
+		10 - rook	
+		11 - queen
+		12 - king
+
+Value of next to move:
+	white to move = 0
+	black to move = 1
+
+Value of castling rights:
+	no castling rights = 0
+	castling rights remain = 1
+
+Value of en passant possibilities:
+	no en passant possilbe = 0
+	en passant possible on A8 = 1
+	en passant possible on B8 = 2
+	.
+	.
+	.
+	en passant possible on H8 = 8
+	en passant possible on A7 = 9
+	.
+	.
+	.
+	en passant possible on H1 = 64
+
+Value of half moves since capture or pawn advancement = half moves
+
+Value of full moves = full moves (since this always is at least 1)
+# ------------------------------------------------------------------------------

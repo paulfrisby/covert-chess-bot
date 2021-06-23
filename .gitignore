@@ -1,0 +1,14 @@
+# Credentials file (to protect API keys and other secrets being added to git repo)
+*/credentials.py
+
+# debug file
+debug.py
+
+# Byte-compiled / optimized / DLL files
+*/__pycache__/
+
+# vscode folder
+*/.vscode/
+
+# heroku procfile
+Procfile
