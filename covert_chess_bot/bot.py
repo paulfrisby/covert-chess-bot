@@ -58,9 +58,8 @@ def emoji_info(update, context):
         # get index of emoji in message
         emojiIndex = covert_chess.emojiIndex(messageEmojis[0]["emoji"])
 
-        # checks if message is just the fully qualified emoji
-        if update.message.text == covert_chess.emojiList[emojiIndex]:
-            
+        # function to build reposnse message for emoji at a given index
+        def buildEmojiInfoReply(index):
             # get the dictionary entry for this emoji 
             emojiInfo = covert_chess.emojiInfo(emojiIndex)
 
@@ -71,22 +70,27 @@ def emoji_info(update, context):
             message += f'Subgroup: {emojiInfo["subgroup"]}\n'
             message += f'Escape Sequence: {emojiInfo["escape"]}'
 
-            update.message.reply_text(message)
+            return message
+        
+        # https://emojipedia.org/variation-selector-16/
+        # invisible character which succeeds some emoji 
+        variationSelector16 = "️"
+
+        # checks if message is just the fully qualified emoji
+        if update.message.text == covert_chess.emojiList[emojiIndex]:
+            update.message.reply_text(buildEmojiInfoReply(emojiIndex))
 
         # checks if message is just the minimally qualified emoji
         elif update.message.text == covert_chess.emojiListLessQualified[emojiIndex]:
-            
-            # get the dictionary entry for this emoji 
-            emojiInfo = covert_chess.emojiInfo(emojiIndex)
+            update.message.reply_text(buildEmojiInfoReply(emojiIndex))
 
-            # build response using info from dictionary
-            message = f'Emoji {emojiIndex}: {emojiInfo["emoji"]}\n'
-            message += f'Name: {emojiInfo["Name"]}\n'
-            message += f'Group: {emojiInfo["group"]}\n'
-            message += f'Subgroup: {emojiInfo["subgroup"]}\n'
-            message += f'Escape Sequence: {emojiInfo["escape"]}'
+        # checks if message is just fully qualified emoji + variation selector 16
+        elif update.message.text == covert_chess.emojiList[emojiIndex] + variationSelector16:
+            update.message.reply_text(buildEmojiInfoReply(emojiIndex))
 
-            update.message.reply_text(message)
+        # checks if message is just the minimally qualified emoji + variation selector 16
+        elif update.message.text == covert_chess.emojiListLessQualified[emojiIndex] + variationSelector16:
+            update.message.reply_text(buildEmojiInfoReply(emojiIndex))
 
         # message contains more than just the 1 emoji in it
         else:
