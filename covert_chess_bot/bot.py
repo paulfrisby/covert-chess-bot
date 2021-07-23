@@ -33,6 +33,8 @@ def commands_command(update, context):
 
 /decode (emojiString or mixedString) - decodes back to fen
 
+/resign (emojiString or mixedString or fen) - creates emoji encoding to show resignation at given position
+
 /mix (emojiString or fen) (message=message) - mix emoji encoding in to a given block of text, returns mixed message
 
 /extract (mixedString) - remove embedded emoji encoding from mixed message
@@ -144,7 +146,7 @@ def encode_command(update, context):
         update.message.reply_text('please input a valid FEN chess position after the /encode command')
 
 def decode_command(update, context):
-    '''Sends emoji encoding of passed FEN position when /encode is issued.'''
+    '''Sends FEN encoding of passed emoji position when /decode is issued.'''
     try:
         # checks an argument was passed
         if len(update.message.text.split(" ", 1)) > 1:
@@ -152,10 +154,17 @@ def decode_command(update, context):
             # get passed string
             emojiEncoding = update.message.text.split(" ", 1)[1].strip()
 
-            # unmix string in case user didn;t run /extract first
-            emojiEncoding = covert_chess.unmix(update.message.text.split(" ", 1)[1])
+            # unmix string in case user didn't run /extract first
+            emojiEncoding = covert_chess.unmix(emojiEncoding)
 
-            response = f'Please see below the FEN of the passed emoji encoding. Use the link to the analysis board if you wish to make a move, copy the resulting FEN position to use with the /encode command.'
+            # checks if position includes resignation emoji
+            if len(emoji.emoji_lis(emojiEncoding)) > 25 and covert_chess.emojiIndex(emoji.emoji_lis(emojiEncoding)[25]["emoji"]) == 2914:
+                response = f'Your opponent resigned! Use the link to the analysis board if you wish to view the position at time of resignation.'   
+
+            # no resignation
+            else:
+                response = f'Please see below the FEN of the passed emoji encoding. Use the link to the analysis board if you wish to make a move, copy the resulting FEN position to use with the /encode command.'
+                
             response += "\n\n"
             response += f'Input emoji encoding:\n{emojiEncoding}'
             response += "\n\n"
@@ -176,6 +185,41 @@ def decode_command(update, context):
     # try block failed, likely because of invalid emoji encoded chess position
     except:
         update.message.reply_text('Please input a valid emoji chess position after the /decode command.')
+
+def resign_command(update, context):
+    '''Give altered emoji string to show resignation at given position when /resign is issued'''
+    try:
+        # checks an argument was passed
+        if len(update.message.text.split(" ", 1)) > 1:
+            
+            response = f'Please see below the emoji encoding of the passed chess position with resignation marker. Use the /mix command if you wish to embed this position in to a text message.'
+                
+            response += "\n\n"
+
+            # store position passed as argument
+            position = update.message.text.split(" ", 1)[1].strip()
+
+            response += f'Input position:\n{position}'
+
+            response += "\n\n"
+
+            # emoji position
+            if len(emoji.emoji_lis(position)) > 0:
+                response += f'Resigned position emoji encoding:\n{covert_chess.encode(covert_chess.decode(position))}🏳️'
+            
+            # FEN position
+            else:
+                response += f'Resigned position emoji encoding:\n{covert_chess.encode(position)}🏳️'
+
+            update.message.reply_text(response, disable_web_page_preview=True)
+
+        # no argument passed
+        else:
+            update.message.reply_text('please input a valid emoji or FEN chess position after the /resign command')
+    
+    # try block failed, likely because of invalid position passed as argument
+    except:
+        update.message.reply_text('please input a valid emoji or FEN chess position after the /resign command')
 
 def mix_command(update, context):
     '''Send emoji encoding mixed in to passed message when the command /mix is issued.'''
@@ -241,11 +285,22 @@ def analysis_board(update, context):
 
         message = f'Passed position:\n{argument}\n\n'
 
+        # emoji encoding
         if len(emoji.emoji_lis(argument)) > 0:
             message += f'Analysis board for passed position:\n{covert_chess.makeMove(covert_chess.decode(argument))}'
             message += "\n\n"
-            message += "If you wish to make a move, do so on the linked analysis board, then copy the resulting FEN position to use with the /encode or /mix command."
+
+            # checks if position includes resignation emoji
+            if len(emoji.emoji_lis(argument)) > 25 and covert_chess.emojiIndex(emoji.emoji_lis(argument)[25]["emoji"]) == 2914:
+                message += f'A resignation occurred at this position! No further move needs to be made'   
+
+            # no resignation
+            else:
+                message += "If you wish to make a move, do so on the linked analysis board, then copy the resulting FEN position to use with the /encode or /mix command."
+            
             update.message.reply_text(message, disable_web_page_preview=True)
+        
+        # FEN encoding
         else:
             # check FEN is valid
             if covert_chess.decode(covert_chess.encode(argument)) == argument:
@@ -277,11 +332,14 @@ def board_editor(update, context):
 
             message = f'Passed position:\n{argument}\n\n'
             
+            # emoji position
             if len(emoji.emoji_lis(argument)) > 0:
                 message += f'Board editor for passed position:\n{covert_chess.createPosition(covert_chess.decode(argument))}'
                 message += "\n\n"
                 message += "After creating desired position in linked board, copy the resulting FEN position to use with the /encode or /mix command."
                 update.message.reply_text(message, disable_web_page_preview=True)
+            
+            # fen position
             else:
                 # check FEN is valid
                 if covert_chess.decode(covert_chess.encode(argument)) == argument:
@@ -324,6 +382,8 @@ def main():
     dispatcher.add_handler(CommandHandler("edit", board_editor))
     dispatcher.add_handler(CommandHandler("create", board_editor)) # alias
     dispatcher.add_handler(CommandHandler("enpassant", enpassant_command))
+    dispatcher.add_handler(CommandHandler("resign", resign_command))
+    dispatcher.add_handler(CommandHandler("giveup", resign_command)) # alias
 
     # default handler for a command that has not been defined
     dispatcher.add_handler(MessageHandler(Filters.command, unknown))

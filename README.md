@@ -1,5 +1,5 @@
 # covert-chess-bot
-Telegram bot to convert between chess positions and a unique emoji encoding. Primary instance of this bot is available via @CovertChessBot on Telegram
+Telegram bot to convert between chess positions and a unique emoji encoding. Primary instance of this bot is available via @CovertChessBot on Telegram. (please note that it may take several seconds to reply to the first command as it is running on a free heroku account)
 
 To run this code yourself you need to complete the following steps:
 

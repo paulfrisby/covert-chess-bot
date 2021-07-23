@@ -66,6 +66,9 @@ is greater than
 2 emojis can be used to encode both of these together. They need to be encoded 
 together, otherwise 1 emoji would not be enough to cover the 5,898 fullmove 
 possiblities.
+
+A final optional white flag emoji (🏳️) will be added at the end for if a user wishes 
+to resign before the end of the game.
 # ------------------------------------------------------------------------------
 
 
@@ -77,6 +80,7 @@ Each position encoded with emoji will be 25 emoji long
 [emoji 2-22] = encoding status 3 squares each, from left to right, top to bottom
 [emoji 23] = who to move, castling rights, en passant possibility / square
 [emoji 24/25] = half moves since last capture or pawn advancement / full moves
+[emoji 26] = 🏳️ (optional in the case there was a resignation at this position)
 # ------------------------------------------------------------------------------
 
 
@@ -110,6 +114,7 @@ emoji 23 index =
 + (black kingside castle*130) + (black queenside castle*65) + enpassant value
 emoji 24 index = ( halfmove + (fullmove*101) ) / 3178
 emoji 25 index = ( halfmove + (fullmove*101) ) % 3178
+emoji 26 index = 2914 (when it is needed, otherwise this emoji is ommitted)
 # ------------------------------------------------------------------------------
 
 
